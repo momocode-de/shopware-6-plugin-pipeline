@@ -20,9 +20,7 @@ fi
 
 npm install -g mochawesome-merge mochawesome-report-generator
 
-ls -ld cypress-report/index.json
-whoami
-npx mochawesome-merge cypress-report/json/*.json -o cypress-report/index.json
+npx mochawesome-merge cypress-report/json/*.json > cypress-report/index.json
 npx marge cypress-report/index.json --reportDir cypress-report --assetsDir cypress-report/assets --reportPageTitle cypress-report/index.html
 
 # ToDo: Report irgendwo hochladen
