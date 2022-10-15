@@ -8,7 +8,7 @@ jobs:
   plugin-pipeline:
     runs-on: ubuntu-latest
     container: shopware/development:${{ matrix.php-version }}-composer-2
-    name: ${{ github.event.client_payload.plugin }} on Shopware ${{ matrix.shopware-version }} and PHP ${{ matrix.php-version }}
+    name: ${{ matrix.shopware-version }} - ${{ matrix.php-version }} - ${{ github.event.client_payload.plugin }}
 
     services:
       mysql:
