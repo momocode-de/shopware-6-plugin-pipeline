@@ -1,0 +1,43 @@
+name: Run plugin pipeline on defined Shopware and PHP versions
+
+on:
+  repository_dispatch:
+    types: [run-all-versions]
+
+jobs:
+  plugin-pipeline:
+    runs-on: ubuntu-latest
+    container: shopware/development:${{ matrix.php-version }}-composer-2
+    name: ${{ github.event.client_payload.plugin }} on Shopware ${{ matrix.shopware-version }} and PHP ${{ matrix.php-version }}
+
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: ${{ github.event.client_payload.php_versions }}
+        shopware-version: ${{ github.event.client_payload.shopware_versions }}
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.PAT }}
+
+      - name: Run plugin pipeline
+        uses: .github/actions/shopware-6-plugin-action
+        with:
+          shopware-version: ${{ matrix.shopware-version }}
+          php-version: ${{ matrix.php-version }}
+          plugin-name: ${{ github.event.client_payload.plugin }}
+          action-path: .github/actions/shopware-6-plugin-action
+          access-token: ${{ secrets.PAT }}
+          skip-cypress: ${{ github.event.client_payload.skip_cypress }}
+          skip-cypress-administration: ${{ github.event.client_payload.skip_cypress_administration }}
+          skip-cypress-storefront: ${{ github.event.client_payload.skip_cypress_storefront }}
+          skip-phpunit: ${{ github.event.client_payload.skip_phpunit }}

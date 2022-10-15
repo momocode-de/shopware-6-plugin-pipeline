@@ -1,0 +1,159 @@
+name: 'Shopware 6 Plugin Action'
+description: 'Run different tasks for your Shopware 6 plugin on a specific Shopware and PHP version'
+
+inputs:
+  shopware-version:
+    description: 'Shopware Version'
+    required: true
+  php-version:
+    description: 'PHP Version'
+    required: true
+  plugin-name:
+    description: 'Technical name of the plugin'
+    required: true
+  action-path:
+    description: 'Path of the action'
+    required: true
+  access-token:
+    description: 'Access token for plugin and test repository'
+    required: true
+  skip-cypress:
+    description: 'Skip all cypress tests'
+    required: false
+    default: 'false'
+  skip-cypress-administration:
+    description: 'Skip cypress administration tests'
+    required: false
+    default: 'false'
+  skip-cypress-storefront:
+    description: 'Skip cypress storefront tests'
+    required: false
+    default: 'false'
+  skip-phpunit:
+    description: 'Skip all phpunit tests'
+    required: false
+    default: 'false'
+  fail-on-error:
+    description: 'Let the workflow fail on test errors'
+    required: false
+    default: 'true'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Init action
+      run: ${{ inputs.action-path }}/scripts/init-action.sh
+      shell: bash
+
+    - name: Clone shopware
+      run: ${{ inputs.action-path }}/scripts/clone-shopware.sh
+      shell: bash
+      env:
+        SHOPWARE_VERSION: ${{ inputs.shopware-version }}
+        PHP_VERSION: ${{ inputs.php-version }}
+        ACTION_PATH: ${{ inputs.action-path }}
+
+    - name: Clone plugin
+      uses: actions/checkout@v3
+      with:
+        repository: momocode-de/${{ inputs.plugin-name }}
+        token: ${{ inputs.access-token }}
+        path: shopware/custom/plugins/${{ inputs.plugin-name }}
+
+    - name: Clone plugin tests
+      uses: actions/checkout@v3
+      with:
+        repository: momocode-de/${{ inputs.plugin-name }}Test
+        ref: ${{ inputs.shopware-version }}
+        token: ${{ inputs.access-token }}
+        path: ./tests
+
+#    - name: Get composer cache directory
+#      id: composer-cache-dir
+#      run: echo "::set-output name=dir::$(composer config --global cache-files-dir)"
+#      shell: bash
+
+#    - name: Get npm cache directory
+#      id: npm-cache-dir
+#      run: echo "::set-output name=dir::$(npm config get cache)"
+#      shell: bash
+
+#    - name: Cache composer dependencies
+#      uses: actions/cache@v3
+#      with:
+#        path: ${{ steps.composer-cache-dir.outputs.dir }}
+#        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+#        restore-keys: |
+#          ${{ runner.os }}-composer-
+
+#    - name: Cache npm dependencies
+#      uses: actions/cache@v3
+#      with:
+#        path: ${{ steps.npm-cache-dir.outputs.dir }}
+#        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+#        restore-keys: |
+#          ${{ runner.os }}-node-
+
+    - name: Prepare plugin
+      run: ${{ inputs.action-path }}/scripts/prepare-plugin.sh
+      shell: bash
+      env:
+        PLUGIN_NAME: ${{ inputs.plugin-name }}
+
+    - name: Prepare plugin tests
+      run: ${{ inputs.action-path }}/scripts/prepare-plugin-tests.sh
+      shell: bash
+
+    - name: Install shopware
+      run: ${{ inputs.action-path }}/scripts/install-shopware.sh
+      shell: bash
+      env:
+        PLUGIN_NAME: ${{ inputs.plugin-name }}
+
+    - name: PHPUnit Tests
+      if: ${{ inputs.skip-phpunit == 'false' }}
+      run: ${{ inputs.action-path }}/scripts/phpunit.sh
+      shell: bash
+      env:
+        PLUGIN_NAME: ${{ inputs.plugin-name }}
+
+    - name: Cypress Administration
+      if: ${{ inputs.skip-cypress == 'false' && inputs.skip-cypress-administration == 'false' }}
+      run: ${{ inputs.action-path }}/scripts/cypress-administration.sh
+      shell: bash
+      continue-on-error: true
+      env:
+        SHOPWARE_VERSION: ${{ inputs.shopware-version }}
+
+    - name: Cypress Storefront
+      if: ${{ inputs.skip-cypress == 'false' && inputs.skip-cypress-storefront == 'false' }}
+      run: ${{ inputs.action-path }}/scripts/cypress-storefront.sh
+      shell: bash
+      continue-on-error: true
+      env:
+        SHOPWARE_VERSION: ${{ inputs.shopware-version }}
+
+    - name: Create Cypress Report
+      if: ${{ inputs.skip-cypress == 'false' && (inputs.skip-cypress-administration == 'false' || inputs.skip-cypress-storefront == 'false') }}
+      run: ${{ inputs.action-path }}/scripts/create-cypress-report.sh
+      shell: bash
+
+    - name: Upload Cypress Report
+      if: ${{ inputs.skip-cypress == 'false' && (inputs.skip-cypress-administration == 'false' || inputs.skip-cypress-storefront == 'false') }}
+      uses: actions/upload-artifact@v3
+      with:
+        name: SW-${{ inputs.shopware-version }}-PHP-${{ inputs.php-version }}-cypress-report
+        path: |
+          ./cypress-report
+
+    - name: Upload shopware logs
+      uses: actions/upload-artifact@v3
+      with:
+        name: SW-${{ inputs.shopware-version }}-PHP-${{ inputs.php-version }}-shopware-logs
+        path: |
+          ./shopware/var/log
+
+    - name: Fail on error
+      if: ${{ inputs.fail-on-error == 'true' }}
+      run: ${{ inputs.action-path }}/scripts/fail-on-error.sh
+      shell: bash
