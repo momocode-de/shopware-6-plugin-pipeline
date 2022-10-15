@@ -1,5 +1,6 @@
 # Install shopware
 cd shopware
+composer config --no-plugins allow-plugins.bamarni/composer-bin-plugin true
 ./psh.phar init-composer
 php dev-ops/generate_ssl.php
 ./psh.phar init-database
