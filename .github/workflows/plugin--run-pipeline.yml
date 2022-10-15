@@ -26,7 +26,7 @@ jobs:
         exclude:
           # There are errors on shopware installation for php 8.1 and shopware versions below 6.4.6.0
           - php-version: 8.1
-            shopware-version: [6.4.0.0, 6.4.1.0, 6.4.1.1, 6.4.1.2, 6.4.2.0, 6.4.2.1, 6.4.3.0, 6.4.3.1, 6.4.4.0, 6.4.4.1, 6.4.5.0, 6.4.5.1]
+            shopware-version: 6.4.5.1
 
     steps:
       - uses: actions/checkout@v3
