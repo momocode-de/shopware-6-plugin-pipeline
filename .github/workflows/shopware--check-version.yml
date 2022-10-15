@@ -1,0 +1,36 @@
+name: Check latest Shopware versions
+
+on:
+  schedule:
+    - cron:  '0 8-17 * * 1-5'
+  workflow_dispatch:
+
+jobs:
+  get-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.PAT }}
+
+      - name: Fetch Shopware 5 version
+        run: |
+          curl -sL https://api.github.com/repos/shopware/shopware/releases/latest | \
+          jq -r ".tag_name" > shopware-5-latest.txt
+
+      - name: Fetch Shopware 6 version
+        run: |
+          curl -sL https://api.github.com/repos/shopware/development/tags | \
+          jq -r ".[0].name" > shopware-6-latest.txt
+
+      - name: Check for modified files
+        id: git-check
+        run: echo ::set-output name=modified::$([ -z "`git status --porcelain`" ] && echo "false" || echo "true")
+
+      - name: Commit latest Shopware versions
+        if: steps.git-check.outputs.modified == 'true'
+        run: |
+          git config --global user.name 'Moritz Müller'
+          git config --global user.email 'moritz@momocode.de'
+          git commit -am "New shopware version"
+          git push

@@ -1,0 +1,54 @@
+name: Trigger plugin pipelines for a specific Shopware 6 version
+
+on:
+  push:
+    paths:
+      - 'shopware-6-latest.txt'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Shopware Tag'
+        required: false
+        type: string
+
+jobs:
+  trigger-plugin-pipelines:
+    runs-on: ubuntu-latest
+    name: Trigger pipeline for ${{ matrix.plugins }}
+
+    strategy:
+      matrix:
+        plugins:
+          - 'MomoLoginRedirectSW6'
+#          - 'MomoShopTheLookSW6'
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.PAT }}
+
+      - name: Ensure that a branch for that Shopware version exists in the plugins test repository
+        env:
+          TAG_INPUT: ${{ github.event.inputs.tag }}
+          PLUGIN: ${{ matrix.plugins }}
+        run: |
+          TAG=${TAG_INPUT:-"`cat shopware-6-latest.txt`"}
+          curl \
+            -X POST \
+            -H "authorization: Bearer ${{ secrets.PAT }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/momocode-de/${PLUGIN}Test/actions/workflows/ensure-branch-exists.yml/dispatches \
+            -d '{"ref":"latest","inputs":{"version":"'${TAG:1}'"}}'
+
+      - name: Trigger plugin pipeline
+        env:
+          TAG_INPUT: ${{ github.event.inputs.tag }}
+          PLUGIN: ${{ matrix.plugins }}
+        run: |
+          TAG=${TAG_INPUT:-"`cat shopware-6-latest.txt`"}
+          curl \
+            -X POST \
+            -H "authorization: Bearer ${{ secrets.PAT }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/momocode-de/${PLUGIN}/actions/workflows/trigger-pipeline.yml/dispatches \
+            -d '{"ref":"latest","inputs":{"version":"'${TAG:1}'"}}'
