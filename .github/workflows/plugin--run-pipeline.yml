@@ -30,12 +30,12 @@ jobs:
           token: ${{ secrets.PAT }}
 
       - name: Run plugin pipeline
-        uses: .github/actions/shopware-6-plugin-action
+        uses: ./.github/actions/shopware-6-plugin-action
         with:
           shopware-version: ${{ matrix.shopware-version }}
           php-version: ${{ matrix.php-version }}
           plugin-name: ${{ github.event.client_payload.plugin }}
-          action-path: .github/actions/shopware-6-plugin-action
+          action-path: ./.github/actions/shopware-6-plugin-action
           access-token: ${{ secrets.PAT }}
           skip-cypress: ${{ github.event.client_payload.skip_cypress }}
           skip-cypress-administration: ${{ github.event.client_payload.skip_cypress_administration }}
