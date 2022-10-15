@@ -51,4 +51,4 @@ jobs:
             -H "authorization: Bearer ${{ secrets.PAT }}" \
             -H "Accept: application/vnd.github.v3+json" \
             https://api.github.com/repos/momocode-de/${PLUGIN}/actions/workflows/trigger-pipeline.yml/dispatches \
-            -d '{"ref":"latest","inputs":{"version":"'${TAG:1}'"}}'
+            -d '{"ref":"master","inputs":{"version":"'${TAG:1}'"}}'
