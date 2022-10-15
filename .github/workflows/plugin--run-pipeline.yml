@@ -2,7 +2,7 @@ name: Run plugin pipeline on defined Shopware and PHP versions
 
 on:
   repository_dispatch:
-    types: [run-all-versions]
+    types: [run-pipelines]
 
 jobs:
   plugin-pipeline:
