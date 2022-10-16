@@ -20,7 +20,7 @@ jobs:
       matrix:
         plugins:
           - 'MomoLoginRedirectSW6'
-#          - 'MomoShopTheLookSW6'
+          - 'MomoShopTheLookSW6'
 
     steps:
       - uses: actions/checkout@v3
